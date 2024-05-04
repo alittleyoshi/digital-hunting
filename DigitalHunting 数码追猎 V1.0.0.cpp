@@ -307,8 +307,8 @@ void ptmap()
 	if (debug == 1)
 		cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 	cout << "You are O, your enemy is X, you need to get V" << '\n';
-	cout << "Use WASD to move" << '\n';
-
+	cout << "Press WASD to move" << '\n';
+	cout << "Press F to give up moving." << '\n';
 	cout << "Here are some skills you can use:" << '\n';
 	cout << "1.Press 1: Time Freeze. (" << skilltime1 << ")" << '\n';
 	cout << "2.Press 2: build a wall. (" << skilltime2 << ")" << '\n';
@@ -788,6 +788,7 @@ int gamestart()
 
 	skilltime1 = siz / 6 + 2 + blessnum[1];
 	skilltime2 = siz / 6 + 1 + blessnum[2];
+	eneskilltime = 1 + levelnum / 5;
 	speed = 1 + blessnum[0];
 	cls();
 	cout << "Loading map......" << '\n';
@@ -831,6 +832,10 @@ int gamestart()
 					fl = 0;
 					y++;
 				}
+				if (nk == 'f')
+				{
+					goto loop2;
+				}
 				if (nk == 'b')
 				{
 					debuger();
@@ -849,6 +854,7 @@ int gamestart()
 					goto loop;
 				}
 			}
+		loop2:
 			if (x == px && y == py)
 			{
 				char keyn = ' ';
@@ -892,9 +898,9 @@ int gamestart()
 
 		wallreduce();
 		step++;
-		if (!gclose && roadcheck3(x, y) < siz)
+		if (eneskilltime > 0 && step % siz == 0)
 		{
-			gclose = 1;
+			eneskilltime--;
 			enemyskill();
 			Sleep(1000);
 			continue;
@@ -904,7 +910,23 @@ int gamestart()
 		{
 			srand(time(NULL));
 			for (int i = 1; i <= (step + rand()) % 3 + 1 + (rand() % 2 == 0 ? levelnum / 3 : 0); i++)
+			{
 				enemymove();
+				if (x == ex && y == ey && invincible == 0)
+				{
+					char keyn = ' ';
+					while (keyn != 'q')
+					{
+						cls();
+						cout << "YOU FAIL!" << '\n';
+						cout << "Your adventure ends up in LEVEL " << levelnum << '\n';
+						cout << "press \"q\"to quit." << '\n';
+						keyn = getkey();
+					}
+					cls();
+					return 0;
+				}
+			}
 		}
 	loop:
 		if (x == px && y == py)
