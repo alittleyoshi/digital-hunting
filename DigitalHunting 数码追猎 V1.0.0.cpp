@@ -6,7 +6,11 @@
 #include "shlwapi.h"
 using namespace std;
 int level;
+int speed;
+int debug = 0;
+int invincible = 0;
 int dx[4] = {-1, 1, 0, 0}, dy[4] = {0, 0, 1, -1};
+int blessnum[4];
 const int inf = 1e9 + 5;
 int mp[200][200];
 int block[200][200];
@@ -55,6 +59,7 @@ bool outof3(int cx, int cy, int dir)
 	else
 		return (cx >= 1 && cx <= siz && cy - 1 >= 1 && cy + 1 <= siz);
 }
+
 void checkroad(int nx, int ny)
 {
 	if (checkvis[nx][ny] == 1 || outof(nx, ny) == 0)
@@ -144,6 +149,108 @@ char getkey()
 		key = key - ('A' - 'a');
 	return key;
 }
+void debuger()
+{
+	if (debug == 0)
+		return;
+	string str[5] = {"skill1", "skill2", "enemy_skill", "Invincible/Not Invincible", "quit"};
+	int nowchoice = 0;
+	cls();
+	while (1)
+	{
+		gotoxy(0, 0);
+		cout << "Debug Menu" << '\n';
+		for (int i = 0; i < 5; i++)
+		{
+			if (i == nowchoice)
+				cout << "-> ";
+			else
+				cout << "   ";
+			cout << str[i] << '\n';
+		}
+		cout << "(Press S,W to choose, press E to confirm)" << '\n';
+		char nchr = getkey();
+		if (nchr == 's' && nowchoice < 4)
+			nowchoice++;
+		if (nchr == 'w' && nowchoice > 0)
+			nowchoice--;
+		if (nchr == 'e')
+		{
+			cls();
+			if (nowchoice == 0)
+			{
+				cout << "input the new number:";
+				cin >> skilltime1;
+				cls();
+				continue;
+			}
+			else if (nowchoice == 1)
+			{
+				cout << "input the new number:";
+				cin >> skilltime2;
+				cls();
+				continue;
+			}
+			else if (nowchoice == 2)
+			{
+				cout << "input the new number:";
+				cin >> eneskilltime;
+				cls();
+				continue;
+			}
+			else if (nowchoice == 3)
+			{
+				invincible = 1 - invincible;
+				if (invincible == 1)
+					cout << "You are now invincible.";
+				else
+					cout << "You are now  not invincible.";
+				Sleep(1000);
+				cls();
+				continue;
+			}
+			else
+				return;
+		}
+	}
+}
+void bless()
+{
+	string str[4] = {"Speed up(move more step at a time)", "Time blessing(get more Time Freeze count)", "Building blessing(get more wall building count)", "Give up the chance."};
+	int nowchoice = 0;
+	cls();
+	while (1)
+	{
+		gotoxy(0, 0);
+		cout << "You've reach LEVEL" << levelnum << ",so you can choose a blessing." << '\n';
+		for (int i = 0; i < 4; i++)
+		{
+			if (i == nowchoice)
+				cout << "-> ";
+			else
+				cout << "   ";
+			cout << str[i] << '\n';
+		}
+		cout << "(Press S,W to choose, press E to confirm)" << '\n';
+		char nchr = getkey();
+		if (nchr == 's' && nowchoice < 3)
+			nowchoice++;
+		if (nchr == 'w' && nowchoice > 0)
+			nowchoice--;
+		if (nchr == 'e')
+		{
+			cls();
+			if (nowchoice == 0)
+				blessnum[0]++;
+			else if (nowchoice == 1)
+				blessnum[1] += levelnum / 5;
+			else if (nowchoice == 2)
+				blessnum[2] += levelnum / 5;
+			cls();
+			return;
+		}
+	}
+}
 
 char settrans()
 {
@@ -197,6 +304,8 @@ void ptmap()
 		printf("\n");
 	}
 	cout << '\n';
+	if (debug == 1)
+		cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 	cout << "You are O, your enemy is X, you need to get V" << '\n';
 	cout << "Use WASD to move" << '\n';
 
@@ -213,6 +322,8 @@ void ptmap1()
 		printf("\n");
 	}
 	cout << '\n';
+	if (debug == 1)
+		cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 	cout << "Now is player1's turn.'" << '\n';
 	cout << "Press WASD to move" << '\n';
 
@@ -229,6 +340,8 @@ void ptmap2(int lststep)
 		printf("\n");
 	}
 	cout << '\n';
+	if (debug == 1)
+		cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 	cout << "Now is player2's turn.'" << '\n';
 	cout << "Press IJKL to move" << '\n';
 	cout << "You can move " << lststep << " more step." << '\n';
@@ -302,14 +415,14 @@ void enemyskill()
 {
 	int dist1 = enemycheck2(x, y);
 	int dist2 = inf;
-	node choicemove = (node){x, y};
+	node choicemove = (node){ex, ey};
 
 	for (int i = 0; i < 4; i++)
 	{
-		int vx = x + dx[i], vy = y + dy[i];
+		int vx = x + dx[i] * 2, vy = y + dy[i] * 2;
 		if (outof(vx, vy) == 0)
 			continue;
-		if (choicemove.x == x && choicemove.y == y)
+		if (choicemove.x == ex && choicemove.y == ey)
 			choicemove = (node){vx, vy, 0};
 		dist2 = enemycheck2(vx, vy);
 		if (dist2 < dist1)
@@ -336,8 +449,6 @@ void enemyskill()
 		printf("\n");
 	}
 	cout << "ENEMY SKILL";
-	Sleep(1000);
-	cls();
 }
 int enemymove2()
 {
@@ -365,12 +476,17 @@ int enemymove2()
 			fl = 0;
 			ey++;
 		}
+		if (nk == 'b')
+		{
+			debuger();
+			return 0;
+		}
 		if (nk == 'p' && eneskilltime > 0)
 		{
 			fl = 0;
 			eneskilltime--;
 			enemyskill();
-			Sleep(100);
+			Sleep(1000);
 			return 0;
 		}
 		if (nk == 'o')
@@ -408,8 +524,8 @@ void putblock()
 		{
 			for (int j = 1; j <= siz; j++)
 			{
-				srand(time(NULL));
-				if (((i + j) / i + j / ranum - i * j + rand()) % ranum == 0)
+				srand(time(NULL) + rand());
+				if ((j / i * rand() + j / ranum - i * j + rand()) % ranum == 0)
 					block[i][j] = 1;
 				else
 					block[i][j] = 0;
@@ -450,6 +566,8 @@ void skill1()
 			printf("\n");
 		}
 		cout << '\n';
+		if (debug == 1)
+			cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 		cout << "Time Freeze! You can move freely within a range of 3 * 3. " << '\n';
 		cout << "You won't fail during this period of time." << '\n';
 		cout << "Press e to end this state." << '\n';
@@ -508,6 +626,8 @@ void skill2()
 			printf("\n");
 		}
 		cout << '\n';
+		if (debug == 1)
+			cout << "[DEBUG MODE]:Press B to open the DEBUG MENU." << endl;
 		printf("Look at the string \"\033[31m%c%c%c\033[0m\", it is a wall '\n", (char)0xFE, (char)0xFE, (char)0xFE);
 		printf("You can press WASD to move it\n");
 		printf("Press R to change its direction.\n");
@@ -601,12 +721,15 @@ void choosesiz()
 }
 int menu()
 {
+
 	string str[4] = {"Game start(1P MODE)", "Game start(2P MODE)", "record", "quit"};
 	int nowchoice = 0;
 	while (1)
 	{
 		gotoxy(0, 0);
 		cout << "Digital Hunting" << '\n';
+		if (debug == 1)
+			cout << "[DEBUG MODE]" << endl;
 		for (int i = 0; i < 4; i++)
 		{
 			if (i == nowchoice)
@@ -633,15 +756,39 @@ int menu()
 			else
 				return 3;
 		}
+		if (nchr == 'b')
+		{
+			nchr = getkey();
+			if (nchr == 't')
+			{
+				nchr = getkey();
+				if (nchr == 'f')
+				{
+					debug = 1 - debug;
+					cls();
+				}
+				else
+					continue;
+			}
+			else
+				continue;
+		}
 	}
 }
+
 int gamestart()
 {
+	if (levelnum % 5 == 0)
+	{
+		bless();
+	}
 	cls();
 	cout << "LEVEL " << levelnum << '\n';
 	Sleep(1000);
-	skilltime1 = siz / 6 + 2;
-	skilltime2 = siz / 6 + 1;
+
+	skilltime1 = siz / 6 + 2 + blessnum[1];
+	skilltime2 = siz / 6 + 1 + blessnum[2];
+	speed = 1 + blessnum[0];
 	cls();
 	cout << "Loading map......" << '\n';
 	py = siz, px = siz;
@@ -654,54 +801,102 @@ int gamestart()
 	cls();
 	while (1)
 	{
-		gotoxy(0, 0);
-		setmap();
-		ptmap();
 		char nk = ' ';
-		bool fl = 1;
-		while (fl)
-		{ // 移动侦测
-			nk = getkey();
-			if (nk == 'w' && (outof(x - 1, y)))
-			{
-				fl = 0;
-				x--;
+		for (int i = 1; i <= speed; i++)
+		{
+			gotoxy(0, 0);
+			setmap();
+			ptmap();
+			bool fl = 1;
+			while (fl)
+			{ // 移动侦测
+				nk = getkey();
+				if (nk == 'w' && (outof(x - 1, y)))
+				{
+					fl = 0;
+					x--;
+				}
+				if (nk == 's' && (outof(x + 1, y)))
+				{
+					fl = 0;
+					x++;
+				}
+				if (nk == 'a' && (outof(x, y - 1)))
+				{
+					fl = 0;
+					y--;
+				}
+				if (nk == 'd' && (outof(x, y + 1)))
+				{
+					fl = 0;
+					y++;
+				}
+				if (nk == 'b')
+				{
+					debuger();
+					goto loop;
+				}
+				if (nk == '1' && skilltime1 > 0)
+				{
+					skilltime1--;
+					skill1();
+					goto loop;
+				}
+				if (nk == '2' && skilltime2 > 0)
+				{
+					skilltime2--;
+					skill2();
+					goto loop;
+				}
 			}
-			if (nk == 's' && (outof(x + 1, y)))
+			if (x == px && y == py)
 			{
-				fl = 0;
-				x++;
+				char keyn = ' ';
+				while (keyn != 'q' && keyn != 's')
+				{
+					cls();
+					cout << "YOU WIN!" << '\n';
+					cout << "press \"q\"to go to the next level." << '\n';
+					cout << "press \"s\"to save your process." << '\n';
+					keyn = getkey();
+				}
+				cls();
+				if (keyn == 's')
+				{
+					char clist[50];
+					sprintf(clist, "%d %d %d %d %d\n", levelnum + 1, siz, blessnum[0], blessnum[1], blessnum[2]);
+					const char *cpath = prcpath.c_str();
+					FILE *fp = fopen(cpath, "w");
+					fprintf(fp, clist);
+					fclose(fp);
+					cls();
+					return 2;
+				}
+				return 1;
 			}
-			if (nk == 'a' && (outof(x, y - 1)))
+			if (x == ex && y == ey && invincible == 0)
 			{
-				fl = 0;
-				y--;
-			}
-			if (nk == 'd' && (outof(x, y + 1)))
-			{
-				fl = 0;
-				y++;
-			}
-			if (nk == '1' && skilltime1 > 0)
-			{
-				skilltime1--;
-				skill1();
-				goto loop;
-			}
-			if (nk == '2' && skilltime2 > 0)
-			{
-				skilltime2--;
-				skill2();
-				goto loop;
+				char keyn = ' ';
+				while (keyn != 'q')
+				{
+					cls();
+					cout << "YOU FAIL!" << '\n';
+					cout << "Your adventure ends up in LEVEL " << levelnum << '\n';
+					cout << "press \"q\"to quit." << '\n';
+					keyn = getkey();
+				}
+				cls();
+				return 0;
 			}
 		}
+
 		wallreduce();
 		step++;
 		if (!gclose && roadcheck3(x, y) < siz)
 		{
 			gclose = 1;
 			enemyskill();
-			Sleep(100);
+			Sleep(1000);
 			continue;
 		}
 		srand(time(NULL));
@@ -727,7 +922,7 @@ int gamestart()
 			if (keyn == 's')
 			{
 				char clist[50];
-				sprintf(clist, "%d %d\n", levelnum + 1, siz);
+				sprintf(clist, "%d %d %d %d %d\n", levelnum + 1, siz, blessnum[0], blessnum[1], blessnum[2]);
 				const char *cpath = prcpath.c_str();
 				FILE *fp = fopen(cpath, "w");
 				fprintf(fp, clist);
@@ -737,7 +932,7 @@ int gamestart()
 			}
 			return 1;
 		}
-		if (x == ex && y == ey)
+		if (x == ex && y == ey && invincible == 0)
 		{
 			char keyn = ' ';
 			while (keyn != 'q')
@@ -757,6 +952,7 @@ int gamestart2()
 {
 	cls();
 	Sleep(1000);
+	invincible = 0;
 	skilltime1 = siz / 4 + 2;
 	skilltime2 = siz / 8 + 1;
 	eneskilltime = 2;
@@ -771,6 +967,7 @@ int gamestart2()
 	cls();
 	while (1)
 	{
+		cls();
 		gotoxy(0, 0);
 		setmap();
 		ptmap1();
@@ -798,6 +995,11 @@ int gamestart2()
 				fl = 0;
 				y++;
 			}
+			if (nk == 'b')
+			{
+				debuger();
+				goto loop2;
+			}
 			if (nk == '1' && skilltime1 > 0)
 			{
 				skilltime1--;
@@ -824,7 +1026,7 @@ int gamestart2()
 			cls();
 			return 0;
 		}
-		if (x == ex && y == ey)
+		if (x == ex && y == ey && invincible == 0)
 		{
 			char keyn = ' ';
 			while (keyn != 'q')
@@ -855,7 +1057,7 @@ int gamestart2()
 				{
 					break;
 				}
-				if (x == ex && y == ey)
+				if (x == ex && y == ey && invincible == 0)
 				{
 					char keyn = ' ';
 					while (keyn != 'q')
@@ -962,7 +1164,7 @@ int main()
 {
 	system("chcp 437"); // 使用此行以应用OEM字符集，显示完整方块
 
-	CreateDirectory(L"DigitalHunting", NULL);
+	CreateDirectory(".\\DigitalHunting", NULL);
 	const char *cpath = prcpath.c_str();
 	ifstream fp(cpath);
 	if (fp)
@@ -1009,22 +1211,39 @@ int main()
 				for (int i = 0; i < instr.length(); i++)
 					rnum = rnum * 10 + (instr[i] - '0');
 				levelnum = rnum;
+
 				fscanf(fp, "%s", recs);
 				i = 0, rnum = 0;
 				string instr2(recs);
 				for (int i = 0; i < instr2.length(); i++)
 					rnum = rnum * 10 + (instr2[i] - '0');
 				siz = rnum;
+
+				for (int j = 0; j < 3; j++)
+				{
+					fscanf(fp, "%s", recs);
+					i = 0, rnum = 0;
+					string instr2(recs);
+					for (int i = 0; i < instr2.length(); i++)
+						rnum = rnum * 10 + (instr2[i] - '0');
+					blessnum[j] = rnum;
+				}
 			}
 			else
 			{
 				choosesiz();
+				for (int j = 0; j < 3; j++)
+				{
+					blessnum[j] = 0;
+				}
 				levelnum = 1;
 			}
 			fclose(fp);
 			int result;
+			invincible = 0;
 			while (1)
 			{
+
 				result = gamestart();
 				if (result == 0 || result == 1)
 				{
