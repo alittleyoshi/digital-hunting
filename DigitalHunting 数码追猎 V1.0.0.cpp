@@ -1181,7 +1181,25 @@ void seerecord()
 		}
 	}
 }
-
+int onClear()
+{
+	cls();
+	char nk = ' ';
+	while (nk != 'q' && nk != 'g')
+	{
+		gotoxy(0, 0);
+		cout << "Congratulations, you have cleared this game!" << endl;
+		cout << "Thank you for play my game." << endl;
+		cout << "This game was made in HSAS OI by 'bai_the_fool' and 'ALittleZhi'." << endl;
+		cout << "Now you can choose to quit,or you can move to the ENDLESS MODE." << endl;
+		cout << "(Press Q to quit,Press G to move to the ENDLESS MODE!)";
+		nk = getkey();
+	}
+	if (nk == 'q')
+		return 0;
+	else
+		return 1;
+}
 int main()
 {
 	system("chcp 437"); // 使用此行以应用OEM字符集，显示完整方块
@@ -1273,6 +1291,23 @@ int main()
 					FILE *fp = fopen(cpath, "w");
 					fprintf(fp, "NULL");
 					fclose(fp);
+				}
+				if (result == 1 && levelnum == 20)
+				{
+					int clearchoice = onClear();
+					cls();
+					cout << "Saving record......" << '\n';
+					cpath = recpath.c_str();
+					fp = fopen(cpath, "a");
+					SYSTEMTIME time;
+					GetLocalTime(&time);
+					char clist[50];
+					sprintf(clist, "%04d/%02d/%02d%d(%d)\n", time.wYear, time.wMonth, time.wDay, levelnum, siz);
+					fprintf(fp, clist);
+					fclose(fp);
+					cls();
+					if (clearchoice == 0)
+						break;
 				}
 				if (result == 0 || result == 2)
 					break;
